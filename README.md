@@ -103,6 +103,26 @@ Create `/etc/cni/net.d/10-mynet.conf`:
 }
 ```
 
+```bash
+sudo tee /etc/cni/net.d/10-mynet.conf > /dev/null <<EOF
+{
+  "cniVersion": "0.3.1",
+  "name": "mynet",
+  "type": "bridge",
+  "bridge": "cni0",
+  "isGateway": true,
+  "ipMasq": true,
+  "ipam": {
+    "type": "host-local",
+    "subnet": "10.22.0.0/16",
+    "routes": [
+      { "dst": "0.0.0.0/0" }
+    ]
+  }
+}
+EOF
+```
+
 ## 8. Configure containerd
 Create `/etc/containerd/config.toml`:
 ```toml
@@ -130,6 +150,34 @@ version = 3
 
 [plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options]
   SystemdCgroup = false
+```
+```bash
+sudo tee /etc/containerd/config.toml > /dev/null <<EOF
+version = 3
+
+[grpc]
+  address = "/run/containerd/containerd.sock"
+
+[plugins.'io.containerd.cri.v1.runtime']
+  enable_selinux = false
+  enable_unprivileged_ports = true
+  enable_unprivileged_icmp = true
+  device_ownership_from_security_context = false
+
+[plugins.'io.containerd.cri.v1.images']
+  snapshotter = "native"
+  disable_snapshot_annotations = true
+
+[plugins.'io.containerd.cri.v1.runtime'.cni]
+  bin_dir = "/opt/cni/bin"
+  conf_dir = "/etc/cni/net.d"
+
+[plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc]
+  runtime_type = "io.containerd.runc.v2"
+
+[plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc.options]
+  SystemdCgroup = false
+EOF
 ```
 
 ## 9. Configure kubelet
