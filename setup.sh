@@ -308,7 +308,7 @@ start() {
             --node-ip=$HOST_IP \
             --cloud-provider=external \
             --cgroup-driver=cgroupfs \
-            --max-pods=4  \
+            --max-pods=20  \
             --v=1 &
     fi
 

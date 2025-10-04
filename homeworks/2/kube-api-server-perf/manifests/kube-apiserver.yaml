@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-apiserver
+  namespace: kube-system
+  labels:
+    component: kube-apiserver
+    tier: control-plane
+spec:
+  hostNetwork: true
+  priorityClassName: system-node-critical
+  containers:
+    - name: kube-apiserver
+      image: registry.k8s.io/kube-apiserver:v1.30.0
+      command:
+        - kube-apiserver
+        - --etcd-servers=http://127.0.0.1:2379
+        - --service-cluster-ip-range=10.0.0.0/24
+        - --bind-address=0.0.0.0
+        - --secure-port=6443
+        - --advertise-address=$(HOST_IP)
+        - --authorization-mode=AlwaysAllow
+        - --token-auth-file=/etc/kubernetes/pki/token.csv
+        - --enable-priority-and-fairness=false
+        - --allow-privileged=true
+        - --profiling=false
+        - --storage-backend=etcd3
+        - --storage-media-type=application/json
+        - --v=2
+        - --cloud-provider=external
+        - --service-account-issuer=https://kubernetes.default.svc.cluster.local
+        - --service-account-key-file=/etc/kubernetes/pki/sa.pub
+        - --service-account-signing-key-file=/etc/kubernetes/pki/sa.key
+      env:
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+      volumeMounts:
+        - name: pki
+          mountPath: /etc/kubernetes/pki
+          readOnly: true
+  volumes:
+    - name: pki
+      hostPath:
+        path: /tmp
+        type: Directory
