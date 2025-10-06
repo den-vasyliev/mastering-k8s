@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-controller-manager
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: kube-controller-manager
+    image: registry.k8s.io/kube-controller-manager:v1.30.0
+    command:
+    - kube-controller-manager
+    - --kubeconfig=/var/lib/kubelet/kubeconfig
+    - --leader-elect=false
+    - --cloud-provider=external
+    - --service-cluster-ip-range=10.0.0.0/24
+    - --cluster-name=kubernetes
+    - --root-ca-file=/var/lib/kubelet/ca.crt
+    - --service-account-private-key-file=/tmp/sa.key
+    - --use-service-account-credentials=true
+    - --v=2
+    env:
+    - name: PATH
+      value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/cni/bin"
+    volumeMounts:
+    - name: kubelet-config
+      mountPath: /var/lib/kubelet
+      readOnly: true
+    - name: tmp
+      mountPath: /tmp
+      readOnly: false
+  volumes:
+  - name: kubelet-config
+    hostPath:
+      path: /var/lib/kubelet
+      type: Directory
+  - name: tmp
+    hostPath:
+      path: /tmp
+      type: DirectoryOrCreate
